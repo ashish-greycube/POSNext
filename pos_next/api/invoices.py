@@ -21,7 +21,7 @@ except Exception:  # pragma: no cover - ERPNext not installed in some environmen
     erpnext_apply_pricing_rule = None
     erpnext_get_applied_pricing_rules = None
 
-
+from pos_next.api.partial_payments import add_payment_to_partial_invoice
 # ==========================================
 # Helper Functions
 # ==========================================
@@ -582,13 +582,18 @@ def submit_invoice(invoice=None, data=None):
             except Exception:
                 pass  # Branch is optional, continue without it
 
-        # Set accounts for all payment methods before saving
+        # Set accounts for all payment methods before saving.
+        # Non-standard modes (e.g. "Customer Credit") are handled via journal
+        # entries after submission, so skip them silently if no account exists.
         for payment in invoice_doc.payments:
             if payment.mode_of_payment:
-                account_info = get_payment_account(
-                    payment.mode_of_payment, invoice_doc.company
-                )
-                payment.account = account_info["account"]
+                try:
+                    account_info = get_payment_account(
+                        payment.mode_of_payment, invoice_doc.company
+                    )
+                    payment.account = account_info["account"]
+                except Exception:
+                    pass
 
         # Handle sales team (multiple sales persons)
         sales_team_data = invoice.get("sales_team") or data.get("sales_team")
@@ -689,6 +694,39 @@ def submit_invoice(invoice=None, data=None):
                     _("Invoice submitted successfully but credit redemption failed. Please contact administrator."),
                     alert=True,
                     indicator="orange"
+                )
+
+        # Reload to get the outstanding_amount updated by ERPNext's standard
+        # POS GL-entry creation (make_pos_gl_entries runs inside submit()).
+        invoice_doc.reload()
+
+        # Safety net: if ERPNext's standard POS mechanism did not fully reconcile
+        # the invoice (outstanding_amount still > 0), create explicit Payment Entry
+        # documents so the invoice is marked Paid.
+        #
+        # Use data["payments"] (passed directly from the cart) rather than
+        # invoice_doc.payments — set_missing_values() inside update_invoice can
+        # reset the child table to POS Profile defaults, emptying it.
+        submitted_payments = data.get("payments") or []
+
+        if flt(invoice_doc.outstanding_amount) > 0 and submitted_payments:
+            try:
+                payments_to_process = [
+                    {
+                        "mode_of_payment": p.get("mode_of_payment"),
+                        "amount": flt(p.get("amount")),
+                    }
+                    for p in submitted_payments
+                    if flt(p.get("amount")) > 0
+                    and frappe.db.exists("Mode of Payment", p.get("mode_of_payment"))
+                ]
+                if payments_to_process:
+                    add_payment_to_partial_invoice(invoice_doc.name, payments_to_process)
+                    invoice_doc.reload()
+            except Exception as pe_error:
+                frappe.log_error(
+                    title="Payment Entry Error",
+                    message=f"Invoice: {invoice_doc.name}, Error: {str(pe_error)}\n{frappe.get_traceback()}"
                 )
 
         # Return complete invoice details

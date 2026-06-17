@@ -130,6 +130,7 @@
 								name="cart-customer-search"
 								:value="customerSearch"
 								@input="handleSearchInput"
+								@focus="customerInputFocused = true"
 								type="text"
 								:placeholder="__('Search or add customer...')"
 								class="w-full h-10 ps-9 pe-3 text-xs border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-shadow"
@@ -155,7 +156,7 @@
 
 					<!-- Customer Dropdown -->
 					<div
-						v-if="customerSearch.trim().length >= 2"
+						v-if="customerInputFocused"
 						class="absolute z-50 mt-0.5 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-hidden"
 					>
 						<!-- Customer Results -->
@@ -181,7 +182,7 @@
 						</div>
 
 						<!-- No Results + Create New Option -->
-						<div v-else-if="customerSearch.trim().length >= 2">
+						<div v-else-if="customerSearch.trim().length > 0">
 							<div class="px-2 py-1.5 text-center text-[11px] font-medium text-gray-700 border-b border-gray-100">
 								{{ __('No results for "{0}"', [customerSearch]) }}
 							</div>
@@ -190,7 +191,7 @@
 						<!-- Create New Customer Option -->
 						<button
 							type="button"
-							v-if="customerSearch.trim().length >= 2"
+							v-if="customerSearch.trim().length > 0"
 							@click="createNewCustomer"
 							class="w-full text-start px-2 py-1.5 hover:bg-green-50 flex items-center gap-1.5 transition-colors border-t border-gray-200"
 						>
@@ -807,6 +808,7 @@ const emit = defineEmits([
 // Customer search state
 const customerSearch = ref("")              // Current search query
 const customerSearchContainer = ref(null)   // Ref to search container for click-outside detection
+const customerInputFocused = ref(false)     // Whether the customer search input is focused
 const allCustomers = ref([])                // All customers loaded in memory for instant filtering
 const customersLoaded = ref(false)          // Flag indicating customers are ready
 const selectedIndex = ref(-1)               // Keyboard navigation index for search results
@@ -980,8 +982,8 @@ const appliedOfferCount = computed(() => (props.appliedOffers || []).length)
 const customerResults = computed(() => {
 	const searchValue = customerSearch.value.trim().toLowerCase()
 
-	if (searchValue.length < 2) {
-		return []
+	if (!searchValue) {
+		return allCustomers.value.slice(0, 20)
 	}
 
 	// Instant in-memory filter
@@ -1050,6 +1052,12 @@ function handleSearchInput(event) {
  * @param {KeyboardEvent} event - Keyboard event from search input
  */
 function handleKeydown(event) {
+	if (event.key === "Escape") {
+		customerSearch.value = ""
+		customerInputFocused.value = false
+		return
+	}
+
 	if (customerResults.value.length === 0) return
 
 	if (event.key === "ArrowDown") {
@@ -1072,8 +1080,6 @@ function handleKeydown(event) {
 			// Auto-select if only one result
 			selectCustomer(customerResults.value[0])
 		}
-	} else if (event.key === "Escape") {
-		customerSearch.value = ""
 	}
 }
 
@@ -1085,6 +1091,7 @@ function handleKeydown(event) {
 function selectCustomer(cust) {
 	emit("select-customer", cust)
 	customerSearch.value = ""
+	customerInputFocused.value = false
 	selectedIndex.value = -1
 	previousCustomer.value = null
 }
@@ -1125,9 +1132,9 @@ async function clearCustomer() {
  * Pre-fills the new customer name with the search query.
  */
 function createNewCustomer() {
-	// Emit event to open customer creation dialog
 	emit("create-customer", customerSearch.value)
 	customerSearch.value = ""
+	customerInputFocused.value = false
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1356,6 +1363,7 @@ function handleOutsideClick(event) {
 		!customerSearchContainer.value.contains(target)
 	) {
 		customerSearch.value = ""
+		customerInputFocused.value = false
 
 		// Restore previous customer if set and no customer selected
 		if (previousCustomer.value && !props.customer) {

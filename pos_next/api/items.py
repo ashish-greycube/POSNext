@@ -1265,6 +1265,9 @@ def get_items(pos_profile, search_term=None, item_group=None, start=0, limit=20)
 			# UOM-specific prices map for frontend selector
 			item["uom_prices"] = uom_prices_map.get(item["item_code"], {})
 
+		if pos_profile_doc.hide_unavailable_items == 1:		
+			items = [item for item in items if item.get("actual_qty", 0) > 0]
+
 		return items
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Get Items Error")

@@ -774,6 +774,12 @@ export function useInvoice() {
 			const submitData = {
 				change_amount:
 					remainingAmount.value < 0 ? Math.abs(remainingAmount.value) : 0,
+				// Pass payments directly so submit_invoice can create Payment Entries
+				// even if set_missing_values() cleared invoice_doc.payments on the draft.
+				payments: rawPayments.map((p) => ({
+					mode_of_payment: p.mode_of_payment,
+					amount: p.amount,
+				})),
 			}
 
 			try {
