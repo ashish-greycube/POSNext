@@ -115,15 +115,16 @@ export function useOffline() {
 		isOffline.value = nowOffline
 		connectionQuality.value = state.quality || offlineState.getConnectionQuality()
 
-		// Detect transition from offline to online
-		if (wasOffline && !nowOffline) {
-			console.log("[useOffline] Transition to online detected, syncing...")
-			try {
-				await syncPending()
-			} catch (error) {
-				console.error("[useOffline] Auto-sync failed:", error)
-			}
-		}
+		// NOTE: Commented out to prevent duplicate syncing.
+		// posSync.js (Pinia store singleton) is the sole auto-sync driver.
+		// if (wasOffline && !nowOffline) {
+		// 	console.log("[useOffline] Transition to online detected, syncing...")
+		// 	try {
+		// 		await syncPending()
+		// 	} catch (error) {
+		// 		console.error("[useOffline] Auto-sync failed:", error)
+		// 	}
+		// }
 
 		wasOffline = nowOffline
 	}

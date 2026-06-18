@@ -128,7 +128,7 @@ export const syncOfflineInvoices = async () => {
 			const response = await call("pos_next.api.invoices.submit_invoice", {
 				data: JSON.stringify({
 					invoice: invoiceData,
-					data: {},
+					data: { "payments": invoiceData.payments || [] },
 				}),
 			})
 
@@ -247,31 +247,33 @@ export const saveOfflinePayment = async (paymentData) => {
 }
 
 // Auto-sync when coming back online
-if (typeof window !== "undefined") {
-	// Listen to centralized offline state changes for auto-sync
-	offlineState.subscribe(async (state) => {
-		// Only sync when transitioning from offline to online
-		if (!state.isOffline && state.source !== 'manual') {
-			console.log("Back online, syncing pending invoices...")
-			const result = await syncOfflineInvoices()
+// NOTE: Commented out to prevent duplicate syncing.
+// posSync.js (Pinia store singleton) is the sole auto-sync driver.
+// if (typeof window !== "undefined") {
+// 	// Listen to centralized offline state changes for auto-sync
+// 	offlineState.subscribe(async (state) => {
+// 		// Only sync when transitioning from offline to online
+// 		if (!state.isOffline && state.source !== 'manual') {
+// 			console.log("Back online, syncing pending invoices...")
+// 			const result = await syncOfflineInvoices()
 
-			// Dispatch event to notify components to update their pending count
-			window.dispatchEvent(
-				new CustomEvent("offlineInvoicesSynced", {
-					detail: result,
-				}),
-			)
+// 			// Dispatch event to notify components to update their pending count
+// 			window.dispatchEvent(
+// 				new CustomEvent("offlineInvoicesSynced", {
+// 					detail: result,
+// 				}),
+// 			)
 
-			if (result.success > 0) {
-				console.log(`Successfully synced ${result.success} invoices`)
-				if (window.frappe?.msgprint) {
-					window.frappe.msgprint({
-						title: __("Sync Complete"),
-						message: `Successfully synced ${result.success} offline invoices`,
-						indicator: "green",
-					})
-				}
-			}
-		}
-	})
-}
+// 			if (result.success > 0) {
+// 				console.log(`Successfully synced ${result.success} invoices`)
+// 				if (window.frappe?.msgprint) {
+// 					window.frappe.msgprint({
+// 						title: __("Sync Complete"),
+// 						message: `Successfully synced ${result.success} offline invoices`,
+// 						indicator: "green",
+// 					})
+// 				}
+// 			}
+// 		}
+// 	})
+// }
