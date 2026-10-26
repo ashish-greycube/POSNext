@@ -46,9 +46,15 @@ function getCurrencySymbolOnly(currency) {
  * @param {number} value - The numeric value to format
  * @param {string} currency - The currency code (e.g., 'USD', 'EUR', 'EGP')
  * @param {string} locale - The locale for formatting (default: 'en-US' for English numbers)
+ * @param {number} precision - Number of decimal places to display
  * @returns {string} Formatted currency string
  */
-export function formatCurrency(value, currency = "USD", locale = "en-US") {
+export function formatCurrency(
+	value,
+	currency = "USD",
+	locale = "en-US",
+	precision = 2,
+) {
 	if (typeof value !== "number" || isNaN(value)) {
 		return ""
 	}
@@ -58,8 +64,8 @@ export function formatCurrency(value, currency = "USD", locale = "en-US") {
 
 	// Format number with English locale
 	const numberFormatted = new Intl.NumberFormat(locale, {
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
+		minimumFractionDigits: precision,
+		maximumFractionDigits: precision,
 	}).format(absValue)
 
 	// Combine symbol with formatted number (with space)

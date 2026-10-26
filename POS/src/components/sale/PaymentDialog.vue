@@ -922,31 +922,32 @@ async function loadPaymentMethods() {
 // Currency symbol for display
 const currencySymbol = computed(() => getCurrencySymbol(props.currency))
 
-// Helper to round to 2 decimal places (handles floating-point precision)
-const round2 = (val) => Number(Number(val).toFixed(2))
+// Match ERPNext's accounting precision so payment totals equal the invoice total.
+const roundCurrency = (value) =>
+	Number(Number(value || 0).toFixed(settingsStore.currencyPrecision))
 
 const totalPaid = computed(() => {
 	const sum = paymentEntries.value.reduce(
 		(sum, entry) => sum + (entry.amount || 0),
 		0,
 	)
-	return round2(sum)
+	return roundCurrency(sum)
 })
 
 const totalAvailableCredit = computed(() => {
 	// Use net_balance: negative means customer has credit, positive means they owe
 	// Return negative of net_balance so positive = credit available, negative = outstanding
-	return round2(-customerBalance.value.net_balance)
+	return roundCurrency(-customerBalance.value.net_balance)
 })
 
 const remainingAmount = computed(() => {
-	const remaining = round2(props.grandTotal) - totalPaid.value
-	return remaining > 0 ? round2(remaining) : 0
+	const remaining = roundCurrency(props.grandTotal) - totalPaid.value
+	return remaining > 0 ? roundCurrency(remaining) : 0
 })
 
 const changeAmount = computed(() => {
-	const change = totalPaid.value - round2(props.grandTotal)
-	return change > 0 ? round2(change) : 0
+	const change = totalPaid.value - roundCurrency(props.grandTotal)
+	return change > 0 ? roundCurrency(change) : 0
 })
 
 const canComplete = computed(() => {
@@ -1107,7 +1108,7 @@ function quickAddPayment(method) {
 
 	paymentEntries.value.push({
 		mode_of_payment: method.mode_of_payment,
-		amount: Number.parseFloat(remainingAmount.value.toFixed(2)),
+		amount: roundCurrency(remainingAmount.value),
 		type: method.type || __('Cash'),
 	})
 
@@ -1152,7 +1153,7 @@ function applyCustomerCredit() {
 	// Add credit as a payment entry
 	paymentEntries.value.push({
 		mode_of_payment: "Customer Credit",
-		amount: Number.parseFloat(creditToApply.toFixed(2)),
+		amount: roundCurrency(creditToApply),
 		type: "Credit",
 		is_customer_credit: true,
 		credit_details: customerCredit.value.map(credit => ({
@@ -1219,7 +1220,7 @@ function completePayment() {
 		return
 	}
 
-	const isPartial = totalPaid.value < props.grandTotal
+	const isPartial = totalPaid.value < roundCurrency(props.grandTotal)
 
 	const paymentData = {
 		payments: paymentEntries.value,
@@ -1238,7 +1239,12 @@ function completePayment() {
 }
 
 function formatCurrency(amount) {
-	return formatCurrencyUtil(Number.parseFloat(amount || 0), props.currency)
+	return formatCurrencyUtil(
+		Number.parseFloat(amount || 0),
+		props.currency,
+		"en-US",
+		settingsStore.currencyPrecision,
+	)
 }
 
 // Get total amount for a specific payment method
@@ -1285,7 +1291,7 @@ function handleAdditionalDiscountChange() {
 				discountAmount = maxAmount
 				// Show warning toast
 				showWarning(__('Maximum allowed discount is {0}% ({1} {2})',
-				[settingsStore.maxDiscountAllowed, props.currency, maxAmount.toFixed(2)]))
+				[settingsStore.maxDiscountAllowed, props.currency, roundCurrency(maxAmount)]))
 			}
 		}
 	}

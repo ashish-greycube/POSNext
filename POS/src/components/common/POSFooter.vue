@@ -1,5 +1,5 @@
 <template>
-	<div ref="footerRoot" :class="footerClass" :style="footerStyle" :data-bw-sig="brandSignature"
+	<div ref="footerRoot" :class="footerClass" :style="footerStyle" :data-pos-branding-sig="brandSignature"
 		@contextmenu.prevent @selectstart.prevent>
 		<div class="footer-content" dir="ltr">
 			<span class="footer-text">{{ footerText }}</span>
@@ -17,8 +17,8 @@ import { call } from '@/utils/apiWrapper'
 
 // Component state
 const footerText = ref('Powered by')
-const linkText = ref('BrainWise')
-const footerLink = ref('https://nexus.brainwise.me')
+const linkText = ref('Greycube Technologies')
+const footerLink = ref('https://greycube.in')
 const footerRoot = ref(null)
 const config = ref({})
 const serverValidationEnabled = ref(true)
@@ -26,7 +26,7 @@ const serverValidationEnabled = ref(true)
 // Dynamic class and style to prevent easy CSS targeting
 const componentId = Math.random().toString(36).substring(7)
 const footerClass = ref(`pos-footer-component pos-footer-component-${componentId}`)
-const brandSignature = computed(() => `BrainWise-${componentId}`)
+const brandSignature = computed(() => `POS-Branding-${componentId}`)
 
 const footerStyle = computed(() => ({
 	padding: config.value._s?.p || '12px 20px',
@@ -81,11 +81,11 @@ const loadBrandingConfig = async () => {
 			}
 		}
 	} catch (error) {
-		console.error('[BrainWise] Failed to load branding config:', error)
+		console.error('[POS Branding] Failed to load branding config:', error)
 		// Use fallback values
 		footerText.value = 'Powered by'
-		linkText.value = 'BrainWise'
-		footerLink.value = 'https://nexus.brainwise.me'
+		linkText.value = 'Greycube Technologies'
+		footerLink.value = 'https://greycube.in'
 	}
 }
 
@@ -100,7 +100,7 @@ const validateWithServer = async () => {
 			brand_url: footerLink.value
 		})
 	} catch (error) {
-		console.error('[BrainWise] Server validation failed:', error)
+		console.error('[POS Branding] Server validation failed:', error)
 	}
 }
 
@@ -123,15 +123,15 @@ const logClientEvent = async (eventType, details = {}) => {
 			})
 		})
 	} catch (error) {
-		console.error('[BrainWise] Failed to log event:', error)
+		console.error('[POS Branding] Failed to log event:', error)
 	}
 }
 
 const ensureBranding = () => {
 	if (!footerRoot.value) return
 
-	const expectedBrand = atob(config.value._l || btoa('BrainWise'))
-	const expectedUrl = atob(config.value._u || btoa('https://nexus.brainwise.me'))
+	const expectedBrand = atob(config.value._l || btoa('Greycube Technologies'))
+	const expectedUrl = atob(config.value._u || btoa('https://greycube.in'))
 	const expectedText = atob(config.value._t || btoa('Powered by'))
 
 	// Check if values have been tampered

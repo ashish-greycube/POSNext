@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from erpnext.accounts.utils import get_currency_precision
 from frappe.model.document import Document
 from frappe.utils import cint, flt
 
@@ -108,6 +109,7 @@ def get_pos_settings(pos_profile):
 	settings["_global_allow_negative_stock"] = cint(
 		frappe.db.get_single_value("Stock Settings", "allow_negative_stock") or 0
 	)
+	settings["currency_precision"] = get_currency_precision()
 
 	return settings
 

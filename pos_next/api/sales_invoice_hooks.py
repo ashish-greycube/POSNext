@@ -6,8 +6,12 @@ Sales Invoice Hooks
 Event handlers for Sales Invoice document events
 """
 
+from decimal import Decimal, ROUND_FLOOR
+
 import frappe
 from frappe import _
+from frappe.model.meta import get_field_precision
+from frappe.utils import cint, flt
 
 
 def validate(doc, method=None):
@@ -20,6 +24,89 @@ def validate(doc, method=None):
 		method: Hook method name (unused)
 	"""
 	apply_tax_inclusive(doc)
+
+
+def before_submit(doc, method=None):
+	"""Prepare POSNext payment amounts for ERPNext GL posting."""
+	allocate_payment_base_amounts(doc)
+
+
+def allocate_payment_base_amounts(doc):
+	"""Allocate the rounded company-currency total across POS payment rows."""
+	if not (
+		cint(doc.get("is_pos"))
+		and doc.get("posa_pos_opening_shift")
+		and not cint(doc.get("is_return"))
+	):
+		return
+
+	payments = [row for row in doc.get("payments", []) if flt(row.amount) > 0]
+	if not payments:
+		return
+
+	company_currency = frappe.get_cached_value("Company", doc.company, "default_currency")
+	precision = get_field_precision(
+		frappe.get_meta("GL Entry").get_field("debit"),
+		currency=company_currency,
+	)
+
+	unit_scale = Decimal(10) ** precision
+	conversion_rate = Decimal(str(flt(doc.conversion_rate)))
+	exact_units = [
+		Decimal(str(flt(row.amount))) * conversion_rate * unit_scale
+		for row in payments
+	]
+	target_base_amount = flt(
+		sum(flt(row.amount) for row in payments) * flt(doc.conversion_rate),
+		precision,
+	)
+	target_units = int(Decimal(str(target_base_amount)) * unit_scale)
+	rounded_base_total = flt(
+		sum(flt(row.base_amount, precision) for row in payments),
+		precision,
+	)
+
+	if all(flt(row.base_amount, precision) for row in payments) and rounded_base_total == target_base_amount:
+		return
+
+	if target_units < len(payments):
+		frappe.throw(
+			_(
+				"The payment split is too small to post in {0} at {1}-decimal currency precision. "
+				"Combine payment rows or increase Currency Precision in System Settings."
+			).format(company_currency, precision),
+			title=_("Payment Amount Below Ledger Precision"),
+		)
+
+	allocated_units = [
+		max(1, int(value.to_integral_value(rounding=ROUND_FLOOR)))
+		for value in exact_units
+	]
+	remaining_units = target_units - sum(allocated_units)
+
+	if remaining_units < 0:
+		frappe.throw(
+			_(
+				"The payment split cannot be represented in {0} at {1}-decimal currency precision. "
+				"Combine payment rows or increase Currency Precision in System Settings."
+			).format(company_currency, precision),
+			title=_("Payment Rounding Conflict"),
+		)
+
+	remainders = [
+		value - value.to_integral_value(rounding=ROUND_FLOOR)
+		for value in exact_units
+	]
+	for index in sorted(range(len(payments)), key=lambda i: remainders[i], reverse=True):
+		if not remaining_units:
+			break
+		allocated_units[index] += 1
+		remaining_units -= 1
+
+	for row, units in zip(payments, allocated_units, strict=True):
+		row.base_amount = flt(Decimal(units) / unit_scale, precision)
+
+	doc.base_paid_amount = flt(sum(row.base_amount for row in payments), precision)
 
 
 def apply_tax_inclusive(doc):

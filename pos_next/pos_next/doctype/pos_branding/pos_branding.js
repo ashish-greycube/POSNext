@@ -1,7 +1,7 @@
 // Copyright (c) 2025, BrainWise and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('BrainWise Branding', {
+frappe.ui.form.on('POS Branding', {
 	refresh: function(frm) {
 		// Add custom buttons and UI elements
 		add_master_key_controls(frm);
@@ -89,7 +89,7 @@ function verify_master_key(frm) {
 	}
 
 	frappe.call({
-		method: 'pos_next.pos_next.doctype.brainwise_branding.brainwise_branding.verify_master_key',
+		method: 'pos_next.pos_next.doctype.pos_branding.pos_branding.verify_master_key',
 		args: {
 			master_key_input: frm.doc.master_key_provided
 		},
@@ -117,7 +117,7 @@ function show_master_key_help() {
 	const help_html = `
 		<div class="master-key-help">
 			<h4>🔐 Master Key System</h4>
-			<p>The BrainWise branding is protected by a cryptographic master key system.</p>
+			<p>The POS branding is protected by a cryptographic master key system.</p>
 
 			<h5>Protected Fields:</h5>
 			<ul>
@@ -197,7 +197,7 @@ function show_tampering_stats() {
 								<td>${stats.logging_enabled ? '<span class="indicator green">Yes</span>' : '<span class="indicator orange">No</span>'}</td>
 							</tr>
 						</table>
-						<p class="text-muted">View detailed logs in <a href="/app/error-log?title=BrainWise%20Branding">Error Log</a></p>
+						<p class="text-muted">View detailed logs in <a href="/app/error-log?title=POS%20Branding">Error Log</a></p>
 					</div>
 				`;
 

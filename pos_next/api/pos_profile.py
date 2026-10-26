@@ -5,6 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
+from erpnext.accounts.utils import get_currency_precision
 
 
 @frappe.whitelist()
@@ -102,10 +103,12 @@ def get_pos_settings(pos_profile):
 				"allow_write_off_change": 0,
 				"allow_partial_payment": 0,
 				"decimal_precision": "2",
+				"currency_precision": get_currency_precision(),
 				"allow_negative_stock": 0,
 				"enable_sales_persons": "Disabled"
 			}
 
+		pos_settings["currency_precision"] = get_currency_precision()
 		return pos_settings
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Get POS Settings Error")

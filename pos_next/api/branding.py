@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 """
-BrainWise Branding API
+POS Branding API
 Provides secure branding configuration and validation endpoints
 """
 
@@ -21,11 +21,11 @@ def get_branding_config():
 	"""
 	try:
 		# Check if doctype exists and get config
-		if not frappe.db.exists("DocType", "BrainWise Branding"):
+		if not frappe.db.exists("DocType", "POS Branding"):
 			# Return default config if doctype doesn't exist yet
 			return get_default_config()
 
-		doc = frappe.get_single("BrainWise Branding")
+		doc = frappe.get_single("POS Branding")
 
 		if not doc.enabled:
 			return get_default_config()
@@ -53,7 +53,7 @@ def get_branding_config():
 
 		return config
 	except Exception as e:
-		frappe.log_error(f"Error fetching branding config: {str(e)}", "BrainWise Branding API")
+		frappe.log_error(f"Error fetching branding config: {str(e)}", "POS Branding API")
 		return get_default_config()
 
 
@@ -61,8 +61,8 @@ def get_default_config():
 	"""Return default branding configuration"""
 	return {
 		"_t": base64.b64encode("Powered by".encode()).decode(),
-		"_l": base64.b64encode("BrainWise".encode()).decode(),
-		"_u": base64.b64encode("https://nexus.brainwise.me".encode()).decode(),
+		"_l": base64.b64encode("Greycube Technologies".encode()).decode(),
+		"_u": base64.b64encode("https://greycube.in".encode()).decode(),
 		"_i": 10000,
 		"_v": True,
 		"_c": "pos-footer-component",
@@ -86,10 +86,10 @@ def validate_branding(client_signature=None, brand_name=None, brand_url=None):
 	"""
 	try:
 		# Check if doctype exists
-		if not frappe.db.exists("DocType", "BrainWise Branding"):
+		if not frappe.db.exists("DocType", "POS Branding"):
 			return {"valid": True, "message": "Branding doctype not installed"}
 
-		doc = frappe.get_single("BrainWise Branding")
+		doc = frappe.get_single("POS Branding")
 
 		if not doc.enabled or not doc.enable_server_validation:
 			return {"valid": True, "message": "Validation disabled"}
@@ -115,7 +115,7 @@ def validate_branding(client_signature=None, brand_name=None, brand_url=None):
 			})
 
 		# Update last validation time
-		frappe.db.set_value("BrainWise Branding", doc.name, "last_validation", frappe.utils.now())
+		frappe.db.set_value("POS Branding", doc.name, "last_validation", frappe.utils.now())
 		frappe.db.commit()
 
 		return {
@@ -124,7 +124,7 @@ def validate_branding(client_signature=None, brand_name=None, brand_url=None):
 			"message": "Validation successful" if is_valid else "Branding mismatch detected"
 		}
 	except Exception as e:
-		frappe.log_error(f"Error validating branding: {str(e)}", "BrainWise Branding Validation")
+		frappe.log_error(f"Error validating branding: {str(e)}", "POS Branding Validation")
 		return {"valid": False, "error": str(e)}
 
 
@@ -136,10 +136,10 @@ def log_client_event(event_type=None, details=None):
 	"""
 	try:
 		# Check if doctype exists
-		if not frappe.db.exists("DocType", "BrainWise Branding"):
+		if not frappe.db.exists("DocType", "POS Branding"):
 			return {"logged": False, "message": "Branding doctype not installed"}
 
-		doc = frappe.get_single("BrainWise Branding")
+		doc = frappe.get_single("POS Branding")
 
 		if not doc.log_tampering_attempts:
 			return {"logged": False, "message": "Logging disabled"}
@@ -165,7 +165,7 @@ def log_client_event(event_type=None, details=None):
 		elif event_type == "link_click":
 			# Log link clicks (for analytics)
 			frappe.log_error(
-				title="BrainWise Branding - Link Click",
+				title="POS Branding - Link Click",
 				message=json.dumps({
 					"user": frappe.session.user,
 					"timestamp": frappe.utils.now(),
@@ -176,7 +176,7 @@ def log_client_event(event_type=None, details=None):
 
 		return {"logged": False, "message": f"Unknown event type: {event_type}"}
 	except Exception as e:
-		frappe.log_error(f"Error logging client event: {str(e)}", "BrainWise Branding Event Log")
+		frappe.log_error(f"Error logging client event: {str(e)}", "POS Branding Event Log")
 		return {"logged": False, "error": str(e)}
 
 
@@ -184,17 +184,17 @@ def log_tampering_attempt(doc, details):
 	"""Internal function to log tampering attempts"""
 	try:
 		# Increment tampering counter
-		current_attempts = frappe.db.get_value("BrainWise Branding", doc.name, "tampering_attempts") or 0
-		frappe.db.set_value("BrainWise Branding", doc.name, "tampering_attempts", current_attempts + 1)
+		current_attempts = frappe.db.get_value("POS Branding", doc.name, "tampering_attempts") or 0
+		frappe.db.set_value("POS Branding", doc.name, "tampering_attempts", current_attempts + 1)
 		frappe.db.commit()
 
 		# Create error log
 		frappe.log_error(
-			title="BrainWise Branding - Tampering Detected",
+			title="POS Branding - Tampering Detected",
 			message=json.dumps(details, indent=2, default=str)
 		)
 	except Exception as e:
-		frappe.log_error(f"Error logging tampering: {str(e)}", "BrainWise Branding")
+		frappe.log_error(f"Error logging tampering: {str(e)}", "POS Branding")
 
 
 @frappe.whitelist(allow_guest=False)
@@ -204,10 +204,10 @@ def get_tampering_stats():
 		frappe.throw(_("Insufficient permissions"), frappe.PermissionError)
 
 	try:
-		if not frappe.db.exists("DocType", "BrainWise Branding"):
+		if not frappe.db.exists("DocType", "POS Branding"):
 			return {"enabled": False, "message": "Branding doctype not installed"}
 
-		doc = frappe.get_single("BrainWise Branding")
+		doc = frappe.get_single("POS Branding")
 
 		return {
 			"enabled": doc.enabled,
@@ -217,5 +217,5 @@ def get_tampering_stats():
 			"logging_enabled": doc.log_tampering_attempts
 		}
 	except Exception as e:
-		frappe.log_error(f"Error getting tampering stats: {str(e)}", "BrainWise Branding Stats")
+		frappe.log_error(f"Error getting tampering stats: {str(e)}", "POS Branding Stats")
 		return {"error": str(e)}

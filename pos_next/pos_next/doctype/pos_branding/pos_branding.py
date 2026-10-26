@@ -20,7 +20,7 @@ MASTER_KEY_HASH = "a19686b133d17d0b528355ae39692a0792780a55b50707dc1a58a0e590838
 PROTECTION_PHRASE_HASH = "3ddb5c12a034095ff81a85bbd06623a60e81252c296b747cf9c127dc57e013a8"
 
 
-class BrainWiseBranding(Document):
+class POSBranding(Document):
 	# Protected fields that require master key to modify
 	PROTECTED_FIELDS = ['enabled', 'brand_text', 'brand_name', 'brand_url', 'check_interval']
 
@@ -42,7 +42,7 @@ class BrainWiseBranding(Document):
 
 				# Log successful modification with master key
 				frappe.log_error(
-					title="BrainWise Branding - Fields Modified with Master Key",
+					title="POS Branding - Fields Modified with Master Key",
 					message=json.dumps({
 						"user": frappe.session.user,
 						"timestamp": frappe.utils.now(),
@@ -116,7 +116,7 @@ class BrainWiseBranding(Document):
 			if key_hash == MASTER_KEY_HASH and phrase_hash == PROTECTION_PHRASE_HASH:
 				# Log successful master key usage
 				frappe.log_error(
-					title="BrainWise Branding - Master Key Used",
+					title="POS Branding - Master Key Used",
 					message=json.dumps({
 						"user": frappe.session.user,
 						"timestamp": frappe.utils.now(),
@@ -129,7 +129,7 @@ class BrainWiseBranding(Document):
 
 			# Log failed attempt
 			frappe.log_error(
-				title="BrainWise Branding - Invalid Master Key Attempt",
+				title="POS Branding - Invalid Master Key Attempt",
 				message=json.dumps({
 					"user": frappe.session.user,
 					"timestamp": frappe.utils.now(),
@@ -140,7 +140,7 @@ class BrainWiseBranding(Document):
 			return False
 
 		except Exception as e:
-			frappe.log_error(f"Master key validation error: {str(e)}", "BrainWise Branding")
+			frappe.log_error(f"Master key validation error: {str(e)}", "POS Branding")
 			return False
 
 	def generate_signature(self):
@@ -191,7 +191,7 @@ class BrainWiseBranding(Document):
 
 			return True
 		except Exception as e:
-			frappe.log_error(f"Branding validation error: {str(e)}", "BrainWise Branding")
+			frappe.log_error(f"Branding validation error: {str(e)}", "POS Branding")
 			return False
 
 	def log_tampering(self, details):
@@ -206,7 +206,7 @@ class BrainWiseBranding(Document):
 
 		# Create error log
 		frappe.log_error(
-			title="BrainWise Branding Tampering Detected",
+			title="POS Branding Tampering Detected",
 			message=json.dumps(details, indent=2, default=str)
 		)
 
@@ -215,7 +215,7 @@ class BrainWiseBranding(Document):
 def get_branding_config():
 	"""API endpoint to get branding configuration"""
 	try:
-		doc = frappe.get_single("BrainWise Branding")
+		doc = frappe.get_single("POS Branding")
 
 		# Branding is ALWAYS active unless disabled with master key
 		if not doc.enabled:
@@ -237,12 +237,12 @@ def get_branding_config():
 
 		return config
 	except Exception as e:
-		frappe.log_error(f"Error fetching branding config: {str(e)}", "BrainWise Branding")
+		frappe.log_error(f"Error fetching branding config: {str(e)}", "POS Branding")
 		# Return default config even on error
 		return {
 			"_t": base64.b64encode("Powered by".encode()).decode(),
-			"_l": base64.b64encode("BrainWise".encode()).decode(),
-			"_u": base64.b64encode("https://nexus.brainwise.me".encode()).decode(),
+			"_l": base64.b64encode("Greycube Technologies".encode()).decode(),
+			"_u": base64.b64encode("https://greycube.in".encode()).decode(),
 			"_i": 10000,
 			"_v": True,
 			"_e": 1
@@ -253,7 +253,7 @@ def get_branding_config():
 def validate_branding(client_signature=None, brand_name=None, brand_url=None):
 	"""Validate branding integrity from client"""
 	try:
-		doc = frappe.get_single("BrainWise Branding")
+		doc = frappe.get_single("POS Branding")
 
 		# Force enable if disabled
 		if not doc.enabled:
@@ -290,7 +290,7 @@ def validate_branding(client_signature=None, brand_name=None, brand_url=None):
 			"timestamp": frappe.utils.now()
 		}
 	except Exception as e:
-		frappe.log_error(f"Error validating branding: {str(e)}", "BrainWise Branding")
+		frappe.log_error(f"Error validating branding: {str(e)}", "POS Branding")
 		return {"valid": False, "enabled": True, "error": str(e)}
 
 
@@ -298,7 +298,7 @@ def validate_branding(client_signature=None, brand_name=None, brand_url=None):
 def log_client_event(event_type=None, details=None):
 	"""Log client-side events (clicks, removals, modifications)"""
 	try:
-		doc = frappe.get_single("BrainWise Branding")
+		doc = frappe.get_single("POS Branding")
 
 		if not doc.log_tampering_attempts:
 			return {"logged": False}
@@ -322,7 +322,7 @@ def log_client_event(event_type=None, details=None):
 
 		return {"logged": True}
 	except Exception as e:
-		frappe.log_error(f"Error logging client event: {str(e)}", "BrainWise Branding")
+		frappe.log_error(f"Error logging client event: {str(e)}", "POS Branding")
 		return {"logged": False, "error": str(e)}
 
 
@@ -355,7 +355,7 @@ def verify_master_key(master_key_input):
 
 		# Log the verification attempt
 		frappe.log_error(
-			title=f"BrainWise Branding - Master Key Verification {'Success' if is_valid else 'Failed'}",
+			title=f"POS Branding - Master Key Verification {'Success' if is_valid else 'Failed'}",
 			message=json.dumps({
 				"user": frappe.session.user,
 				"timestamp": frappe.utils.now(),
@@ -370,7 +370,7 @@ def verify_master_key(master_key_input):
 		}
 
 	except Exception as e:
-		frappe.log_error(f"Master key verification error: {str(e)}", "BrainWise Branding")
+		frappe.log_error(f"Master key verification error: {str(e)}", "POS Branding")
 		return {
 			"valid": False,
 			"error": str(e)
@@ -397,7 +397,7 @@ def generate_new_master_key():
 
 	# Log this generation
 	frappe.log_error(
-		title="BrainWise Branding - New Master Key Generated",
+		title="POS Branding - New Master Key Generated",
 		message=json.dumps({
 			"user": frappe.session.user,
 			"timestamp": frappe.utils.now(),
@@ -411,5 +411,5 @@ def generate_new_master_key():
 		"protection_phrase": new_phrase,
 		"key_hash": key_hash,
 		"phrase_hash": phrase_hash,
-		"instructions": "IMPORTANT: Save these securely! Update MASTER_KEY_HASH and PROTECTION_PHRASE_HASH in brainwise_branding.py with the hashes provided above."
+		"instructions": "IMPORTANT: Save these securely! Update MASTER_KEY_HASH and PROTECTION_PHRASE_HASH in pos_branding.py with the hashes provided above."
 	}

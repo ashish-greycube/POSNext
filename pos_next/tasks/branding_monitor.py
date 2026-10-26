@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 """
-BrainWise Branding Monitor
+POS Branding Monitor
 Scheduled task to monitor branding integrity and log suspicious activity
 """
 
@@ -17,11 +17,11 @@ def monitor_branding_integrity():
 	Runs periodically to ensure branding configuration is intact
 	"""
 	try:
-		# Check if BrainWise Branding doctype exists
-		if not frappe.db.exists("DocType", "BrainWise Branding"):
+		# Check if POS Branding doctype exists
+		if not frappe.db.exists("DocType", "POS Branding"):
 			return
 
-		doc = frappe.get_single("BrainWise Branding")
+		doc = frappe.get_single("POS Branding")
 
 		if not doc.enabled:
 			return
@@ -34,16 +34,16 @@ def monitor_branding_integrity():
 		# Verify signature integrity
 		if not doc.encrypted_signature:
 			frappe.log_error(
-				title="BrainWise Branding - Missing Signature",
-				message="Branding configuration is missing encrypted signature. Please resave the BrainWise Branding document."
+				title="POS Branding - Missing Signature",
+				message="Branding configuration is missing encrypted signature. Please resave the POS Branding document."
 			)
 
 		# Log monitoring activity
-		frappe.logger().info(f"BrainWise Branding Monitor - Checked at {now()}, Tampering attempts: {doc.tampering_attempts or 0}")
+		frappe.logger().info(f"POS Branding Monitor - Checked at {now()}, Tampering attempts: {doc.tampering_attempts or 0}")
 
 	except Exception as e:
 		frappe.log_error(
-			title="BrainWise Branding Monitor Error",
+			title="POS Branding Monitor Error",
 			message=f"Error running branding monitor: {str(e)}"
 		)
 
@@ -65,20 +65,20 @@ def send_tampering_alert(doc):
 
 		# Create notification
 		message = f"""
-<h3>BrainWise Branding - Excessive Tampering Detected</h3>
-<p>The BrainWise branding footer has been tampered with <strong>{doc.tampering_attempts}</strong> times.</p>
+<h3>POS Branding - Excessive Tampering Detected</h3>
+<p>The POS branding footer has been tampered with <strong>{doc.tampering_attempts}</strong> times.</p>
 <p><strong>Last Validation:</strong> {doc.last_validation or 'Never'}</p>
 <p>Please review the Error Log for detailed tampering attempts.</p>
-<p><a href="/app/brainwise-branding">View Branding Configuration</a></p>
+<p><a href="/app/pos-branding">View Branding Configuration</a></p>
 		"""
 
 		for user in users:
 			try:
 				frappe.get_doc({
 					"doctype": "Notification Log",
-					"subject": "BrainWise Branding - Tampering Alert",
+					"subject": "POS Branding - Tampering Alert",
 					"type": "Alert",
-					"document_type": "BrainWise Branding",
+					"document_type": "POS Branding",
 					"document_name": doc.name,
 					"for_user": user,
 					"email_content": message
@@ -90,7 +90,7 @@ def send_tampering_alert(doc):
 
 	except Exception as e:
 		frappe.log_error(
-			title="BrainWise Branding Alert Error",
+			title="POS Branding Alert Error",
 			message=f"Error sending tampering alert: {str(e)}"
 		)
 
@@ -101,10 +101,10 @@ def reset_tampering_counter():
 	Keeps historical data manageable
 	"""
 	try:
-		if not frappe.db.exists("DocType", "BrainWise Branding"):
+		if not frappe.db.exists("DocType", "POS Branding"):
 			return
 
-		doc = frappe.get_single("BrainWise Branding")
+		doc = frappe.get_single("POS Branding")
 
 		if not doc.enabled:
 			return
@@ -114,7 +114,7 @@ def reset_tampering_counter():
 		# Log the reset
 		if old_count > 0:
 			frappe.log_error(
-				title="BrainWise Branding - Monthly Counter Reset",
+				title="POS Branding - Monthly Counter Reset",
 				message=json.dumps({
 					"previous_count": old_count,
 					"reset_date": now(),
@@ -123,12 +123,12 @@ def reset_tampering_counter():
 			)
 
 		# Reset counter
-		frappe.db.set_value("BrainWise Branding", doc.name, "tampering_attempts", 0)
+		frappe.db.set_value("POS Branding", doc.name, "tampering_attempts", 0)
 		frappe.db.commit()
 
 	except Exception as e:
 		frappe.log_error(
-			title="BrainWise Branding Counter Reset Error",
+			title="POS Branding Counter Reset Error",
 			message=f"Error resetting tampering counter: {str(e)}"
 		)
 
@@ -139,10 +139,10 @@ def validate_all_active_sessions():
 	This helps detect if users are using modified clients
 	"""
 	try:
-		if not frappe.db.exists("DocType", "BrainWise Branding"):
+		if not frappe.db.exists("DocType", "POS Branding"):
 			return
 
-		doc = frappe.get_single("BrainWise Branding")
+		doc = frappe.get_single("POS Branding")
 
 		if not doc.enabled or not doc.enable_server_validation:
 			return
@@ -157,11 +157,11 @@ def validate_all_active_sessions():
 
 		if active_sessions:
 			frappe.logger().info(
-				f"BrainWise Branding - Active sessions: {len(active_sessions)}"
+				f"POS Branding - Active sessions: {len(active_sessions)}"
 			)
 
 	except Exception as e:
 		frappe.log_error(
-			title="BrainWise Branding Session Validation Error",
+			title="POS Branding Session Validation Error",
 			message=f"Error validating active sessions: {str(e)}"
 		)
